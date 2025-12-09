@@ -109,6 +109,33 @@ function deleteRecord(index) {
     }
 }
 
+// Function to save data as JSON file
+function saveDataAsFile() {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toLocaleTimeString('id-ID').replace(/:/g, '-');
+    const filename = `absensi_guru_${dateStr}_${timeStr}.json`;
+
+    const dataToSave = {
+        school: "SMK Muhammadiyah 1 Pandaan",
+        exportDate: now.toLocaleString('id-ID'),
+        totalRecords: attendanceData.length,
+        attendanceData: attendanceData
+    };
+
+    const jsonContent = JSON.stringify(dataToSave, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
 // Function to download report as CSV
 function downloadReport() {
     const csvContent = "data:text/csv;charset=utf-8,"
@@ -136,14 +163,33 @@ function updateToggleState() {
 // Function to toggle attendance status
 function toggleAttendance() {
     const isOpen = attendanceToggle.checked;
+
+    // Update Firebase
+    if (statusRef) {
+        window.firebaseSet(statusRef, isOpen);
+    }
+
+    // Also update localStorage for immediate UI updates
     localStorage.setItem('attendanceOpen', isOpen.toString());
 
     if (isOpen) {
         // Set timestamp when attendance is opened
         const openTime = Date.now();
+        if (openTimeRef) {
+            window.firebaseSet(openTimeRef, openTime);
+        }
         localStorage.setItem('attendanceOpenTime', openTime.toString());
+
         // Set auto-close after 1 hour (3600000 milliseconds)
         setTimeout(() => {
+            // Close attendance in Firebase
+            if (statusRef) {
+                window.firebaseSet(statusRef, false);
+            }
+            if (openTimeRef) {
+                window.firebaseSet(openTimeRef, null);
+            }
+            // Update localStorage
             localStorage.setItem('attendanceOpen', 'false');
             localStorage.removeItem('attendanceOpenTime');
             // Update toggle if admin is still on the page
@@ -154,6 +200,9 @@ function toggleAttendance() {
         }, 3600000); // 1 hour
     } else {
         // Clear timer when manually closed
+        if (openTimeRef) {
+            window.firebaseSet(openTimeRef, null);
+        }
         localStorage.removeItem('attendanceOpenTime');
     }
 
@@ -170,6 +219,7 @@ closeLogin.addEventListener('click', () => {
 
 searchInput.addEventListener('input', filterData);
 filterSelect.addEventListener('change', filterData);
+saveDataBtn.addEventListener('click', saveDataAsFile);
 downloadBtn.addEventListener('click', downloadReport);
 attendanceToggle.addEventListener('change', toggleAttendance);
 

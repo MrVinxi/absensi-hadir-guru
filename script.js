@@ -1,5 +1,51 @@
-// Initialize attendance data from localStorage or empty array
-let attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
+// Initialize Firebase references
+let attendanceData = [];
+let attendanceStatus = false;
+let attendanceOpenTime = null;
+
+// Firebase references
+let attendanceRef;
+let statusRef;
+let openTimeRef;
+
+// Initialize Firebase when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for Firebase to be available
+    const checkFirebase = setInterval(() => {
+        if (window.firebaseDB && window.firebaseRef && window.firebaseOnValue) {
+            clearInterval(checkFirebase);
+            initializeFirebase();
+        }
+    }, 100);
+});
+
+function initializeFirebase() {
+    // Create Firebase references
+    attendanceRef = window.firebaseRef(window.firebaseDB, 'attendanceData');
+    statusRef = window.firebaseRef(window.firebaseDB, 'attendanceOpen');
+    openTimeRef = window.firebaseRef(window.firebaseDB, 'attendanceOpenTime');
+
+    // Listen for attendance data changes
+    window.firebaseOnValue(attendanceRef, (snapshot) => {
+        const data = snapshot.val();
+        attendanceData = data ? Object.values(data) : [];
+        // Update UI if needed
+    });
+
+    // Listen for attendance status changes
+    window.firebaseOnValue(statusRef, (snapshot) => {
+        attendanceStatus = snapshot.val() === true;
+        updateAttendanceUI();
+    });
+
+    // Listen for open time changes
+    window.firebaseOnValue(openTimeRef, (snapshot) => {
+        attendanceOpenTime = snapshot.val();
+        if (attendanceStatus) {
+            startCountdownTimer();
+        }
+    });
+}
 
 const form = document.getElementById('attendanceForm');
 const nameInput = document.getElementById('name');
@@ -49,7 +95,9 @@ function saveAttendance(name, status) {
         status: status,
         timestamp: timestamp
     };
-    attendanceData.unshift(attendance); // Add to beginning for latest first
+
+    // Save to localStorage as JSON
+    attendanceData.unshift(attendance);
     localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
 }
 
