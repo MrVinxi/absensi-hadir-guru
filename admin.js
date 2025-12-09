@@ -164,31 +164,16 @@ function updateToggleState() {
 function toggleAttendance() {
     const isOpen = attendanceToggle.checked;
 
-    // Update Firebase
-    if (statusRef) {
-        window.firebaseSet(statusRef, isOpen);
-    }
-
-    // Also update localStorage for immediate UI updates
+    // Update localStorage
     localStorage.setItem('attendanceOpen', isOpen.toString());
 
     if (isOpen) {
         // Set timestamp when attendance is opened
         const openTime = Date.now();
-        if (openTimeRef) {
-            window.firebaseSet(openTimeRef, openTime);
-        }
         localStorage.setItem('attendanceOpenTime', openTime.toString());
 
         // Set auto-close after 1 hour (3600000 milliseconds)
         setTimeout(() => {
-            // Close attendance in Firebase
-            if (statusRef) {
-                window.firebaseSet(statusRef, false);
-            }
-            if (openTimeRef) {
-                window.firebaseSet(openTimeRef, null);
-            }
             // Update localStorage
             localStorage.setItem('attendanceOpen', 'false');
             localStorage.removeItem('attendanceOpenTime');
@@ -200,9 +185,6 @@ function toggleAttendance() {
         }, 3600000); // 1 hour
     } else {
         // Clear timer when manually closed
-        if (openTimeRef) {
-            window.firebaseSet(openTimeRef, null);
-        }
         localStorage.removeItem('attendanceOpenTime');
     }
 

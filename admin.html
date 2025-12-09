@@ -6,35 +6,6 @@
     <title>Admin - Sistem Absensi Siswa</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
-        import { getDatabase, ref, onValue, set, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js';
-
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDUMMY_API_KEY_FOR_DEMO",
-            authDomain: "absensi-guru-smk.firebaseapp.com",
-            databaseURL: "https://absensi-guru-smk-default-rtdb.firebaseio.com",
-            projectId: "absensi-guru-smk",
-            storageBucket: "absensi-guru-smk.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef123456"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        // Make Firebase available globally
-        window.firebaseDB = database;
-        window.firebaseRef = ref;
-        window.firebaseOnValue = onValue;
-        window.firebaseSet = set;
-        window.firebasePush = push;
-        window.firebaseUpdate = update;
-        window.firebaseRemove = remove;
-    </script>
 </head>
 <body>
     <div class="background">

@@ -1,51 +1,5 @@
-// Initialize Firebase references
-let attendanceData = [];
-let attendanceStatus = false;
-let attendanceOpenTime = null;
-
-// Firebase references
-let attendanceRef;
-let statusRef;
-let openTimeRef;
-
-// Initialize Firebase when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Wait for Firebase to be available
-    const checkFirebase = setInterval(() => {
-        if (window.firebaseDB && window.firebaseRef && window.firebaseOnValue) {
-            clearInterval(checkFirebase);
-            initializeFirebase();
-        }
-    }, 100);
-});
-
-function initializeFirebase() {
-    // Create Firebase references
-    attendanceRef = window.firebaseRef(window.firebaseDB, 'attendanceData');
-    statusRef = window.firebaseRef(window.firebaseDB, 'attendanceOpen');
-    openTimeRef = window.firebaseRef(window.firebaseDB, 'attendanceOpenTime');
-
-    // Listen for attendance data changes
-    window.firebaseOnValue(attendanceRef, (snapshot) => {
-        const data = snapshot.val();
-        attendanceData = data ? Object.values(data) : [];
-        // Update UI if needed
-    });
-
-    // Listen for attendance status changes
-    window.firebaseOnValue(statusRef, (snapshot) => {
-        attendanceStatus = snapshot.val() === true;
-        updateAttendanceUI();
-    });
-
-    // Listen for open time changes
-    window.firebaseOnValue(openTimeRef, (snapshot) => {
-        attendanceOpenTime = snapshot.val();
-        if (attendanceStatus) {
-            startCountdownTimer();
-        }
-    });
-}
+// Initialize attendance data from localStorage
+let attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
 
 const form = document.getElementById('attendanceForm');
 const nameInput = document.getElementById('name');
