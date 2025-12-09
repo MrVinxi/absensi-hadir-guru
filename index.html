@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Guru SMK Muhammadiyah 1 Pandaan</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+        import { getDatabase, ref, onValue, set, push, update } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDUMMY_API_KEY_FOR_DEMO",
+            authDomain: "absensi-guru-smk.firebaseapp.com",
+            databaseURL: "https://absensi-guru-smk-default-rtdb.firebaseio.com",
+            projectId: "absensi-guru-smk",
+            storageBucket: "absensi-guru-smk.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Make Firebase available globally
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebaseOnValue = onValue;
+        window.firebaseSet = set;
+        window.firebasePush = push;
+        window.firebaseUpdate = update;
+    </script>
+</head>
+<body>
+    <div class="background">
+        <div class="container">
+            <div class="header">
+                <h1>Absensi Guru</h1>
+                <p>SMK Muhammadiyah 1 Pandaan</p>
+            </div>
+            
+            <!-- Attendance Closed Notification -->
+            <div id="attendanceClosed" class="card" style="display: none;">
+                <div class="closed-notification">
+                    <h2>🔒 Absensi Ditutup</h2>
+                    <p>Halaman absensi saat ini ditutup oleh admin. Silakan tunggu sampai admin membuka kembali untuk melakukan absensi.</p>
+                    <div class="waiting-indicator">
+                        <div class="spinner"></div>
+                        <p>Menunggu admin membuka absensi...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Form -->
+            <div id="attendanceFormContainer" class="card">
+                <h2>Input Absensi</h2>
+
+                <!-- Countdown Timer -->
+                <div id="countdownTimer" class="countdown-timer" style="display: none;">
+                    <div class="timer-display">
+                        <span class="timer-icon">⏱️</span>
+                        <span class="timer-text">Waktu tersisa: </span>
+                        <span id="timerDisplay" class="timer-count">60:00</span>
+                    </div>
+                    <p class="timer-warning">Absensi akan otomatis ditutup dalam 1 jam</p>
+                </div>
+                <form id="attendanceForm">
+                    <div class="form-group">
+                        <label for="name">Nama Lengkap</label>
+                        <input type="text" id="name" placeholder="Masukkan nama lengkap" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status Kehadiran</label>
+                        <select id="status" required>
+                            <option value="">Pilih Status</option>
+                            <option value="Hadir">✅ Hadir</option>
+                            <option value="Izin">📝 Izin</option>
+                            <option value="Sakit">🏥 Sakit</option>
+                            <option value="Bolos">❌ Bolos</option>
+                            <option value="Alfa">🚫 Alfa</option>
+                            <option value="Terlambat">⏰ Terlambat</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Kirim Absensi</button>
+                </form>
+
+                <div id="errorMessage" class="error"></div>
+                <div id="successMessage" class="success"></div>
+            </div>
+            
+            <div class="footer">
+                <a href="admin.html" class="admin-link">Login Admin</a>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
