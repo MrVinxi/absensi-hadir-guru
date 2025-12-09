@@ -52,7 +52,7 @@ const server = http.createServer((req, res) => {
     }
 
     // Parse URL
-    const url = new URL(req.url, `http://${req.headers.host}`);
+    const url = new URL(req.url, `https://${req.headers.host}`);
     const pathname = url.pathname;
 
     if (pathname === '/sync') {

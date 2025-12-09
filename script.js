@@ -71,6 +71,7 @@ async function syncDataFromServer() {
             attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
             attendanceOpen = localStorage.getItem('attendanceOpen') === 'true';
             attendanceOpenTime = localStorage.getItem('attendanceOpenTime');
+            updateAttendanceUI();
         }
     } catch (error) {
         console.error('Error syncing data:', error);
@@ -78,6 +79,7 @@ async function syncDataFromServer() {
         attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
         attendanceOpen = localStorage.getItem('attendanceOpen') === 'true';
         attendanceOpenTime = localStorage.getItem('attendanceOpenTime');
+        updateAttendanceUI();
     }
 }
 

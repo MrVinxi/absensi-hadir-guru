@@ -1,5 +1,5 @@
 {
-  "attendanceOpen": false,
-  "attendanceOpenTime": null,
+  "attendanceOpen": true,
+  "attendanceOpenTime": 1765318625373,
   "attendanceData": []
 }

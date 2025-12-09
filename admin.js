@@ -1,5 +1,5 @@
 // Sync server URL - change this to your server URL
-const SYNC_URL = 'http://localhost:3000/sync';
+const SYNC_URL = 'https://absensi-hadir-guru.vercel.app/sync';
 
 // Global variables
 let attendanceData = [];
