@@ -1,5 +1,10 @@
-// Initialize attendance data from localStorage
-let attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
+// Sync server URL - change this to your server URL
+const SYNC_URL = 'http://localhost:3000/sync';
+
+// Global variables
+let attendanceData = [];
+let attendanceOpen = false;
+let attendanceOpenTime = null;
 
 // Login elements
 const loginModal = document.getElementById('loginModal');
@@ -101,11 +106,34 @@ function filterData() {
 }
 
 // Function to delete attendance record
-function deleteRecord(index) {
+async function deleteRecord(index) {
     if (confirm('Apakah Anda yakin ingin menghapus data absensi ini?')) {
-        attendanceData.splice(index, 1);
-        localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
-        filterData(); // Re-render with current filters
+        try {
+            const response = await fetch(SYNC_URL, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ index: index })
+            });
+
+            if (response.ok) {
+                console.log('Record deleted from server');
+                await syncDataFromServer();
+            } else {
+                console.error('Failed to delete record from server');
+                // Fallback to localStorage
+                attendanceData.splice(index, 1);
+                localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+                filterData();
+            }
+        } catch (error) {
+            console.error('Error deleting record:', error);
+            // Fallback to localStorage
+            attendanceData.splice(index, 1);
+            localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+            filterData();
+        }
     }
 }
 
@@ -155,37 +183,72 @@ function downloadReport() {
 
 // Function to update toggle state
 function updateToggleState() {
-    const isOpen = localStorage.getItem('attendanceOpen') === 'true';
-    attendanceToggle.checked = isOpen;
-    toggleText.textContent = isOpen ? '🔓 Buka Absensi' : '🔒 Tutup Absensi';
+    attendanceToggle.checked = attendanceOpen;
+    toggleText.textContent = attendanceOpen ? '🔓 Buka Absensi' : '🔒 Tutup Absensi';
 }
 
 // Function to toggle attendance status
-function toggleAttendance() {
+async function toggleAttendance() {
     const isOpen = attendanceToggle.checked;
 
-    // Update localStorage
-    localStorage.setItem('attendanceOpen', isOpen.toString());
+    try {
+        const response = await fetch(SYNC_URL, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ attendanceOpen: isOpen })
+        });
 
-    if (isOpen) {
-        // Set timestamp when attendance is opened
-        const openTime = Date.now();
-        localStorage.setItem('attendanceOpenTime', openTime.toString());
+        if (response.ok) {
+            console.log('Attendance status updated on server');
+            await syncDataFromServer();
 
-        // Set auto-close after 1 hour (3600000 milliseconds)
-        setTimeout(() => {
-            // Update localStorage
-            localStorage.setItem('attendanceOpen', 'false');
-            localStorage.removeItem('attendanceOpenTime');
-            // Update toggle if admin is still on the page
-            if (attendanceToggle) {
-                attendanceToggle.checked = false;
-                toggleText.textContent = '🔒 Tutup Absensi';
+            // Set auto-close timer if opened
+            if (isOpen) {
+                setTimeout(async () => {
+                    try {
+                        await fetch(SYNC_URL, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ attendanceOpen: false })
+                        });
+                        // Update UI if admin is still on the page
+                        if (attendanceToggle) {
+                            attendanceToggle.checked = false;
+                            toggleText.textContent = '🔒 Tutup Absensi';
+                            await syncDataFromServer();
+                        }
+                    } catch (error) {
+                        console.error('Error auto-closing attendance:', error);
+                    }
+                }, 3600000); // 1 hour
             }
-        }, 3600000); // 1 hour
-    } else {
-        // Clear timer when manually closed
-        localStorage.removeItem('attendanceOpenTime');
+        } else {
+            console.error('Failed to update attendance status on server');
+            // Fallback to localStorage
+            localStorage.setItem('attendanceOpen', isOpen.toString());
+            if (isOpen) {
+                const openTime = Date.now();
+                localStorage.setItem('attendanceOpenTime', openTime.toString());
+            } else {
+                localStorage.removeItem('attendanceOpenTime');
+            }
+            updateToggleState();
+        }
+    } catch (error) {
+        console.error('Error toggling attendance:', error);
+        // Fallback to localStorage
+        localStorage.setItem('attendanceOpen', isOpen.toString());
+        if (isOpen) {
+            const openTime = Date.now();
+            localStorage.setItem('attendanceOpenTime', openTime.toString());
+        } else {
+            localStorage.removeItem('attendanceOpenTime');
+        }
+        updateToggleState();
     }
 
     toggleText.textContent = isOpen ? '🔓 Buka Absensi' : '🔒 Tutup Absensi';

@@ -1,5 +1,10 @@
-// Initialize attendance data from localStorage
-let attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
+// Sync server URL - change this to your server URL
+const SYNC_URL = 'https://absensi-hadir-guru.vercel.app/sync';
+
+// Global variables
+let attendanceData = [];
+let attendanceOpen = false;
+let attendanceOpenTime = null;
 
 const form = document.getElementById('attendanceForm');
 const nameInput = document.getElementById('name');
@@ -40,24 +45,97 @@ function showSuccess(message) {
     }, 3000);
 }
 
+// Function to sync data from server
+async function syncDataFromServer() {
+    try {
+        const response = await fetch(SYNC_URL);
+        if (response.ok) {
+            const data = await response.json();
+            attendanceData = data.attendanceData || [];
+            attendanceOpen = data.attendanceOpen || false;
+            attendanceOpenTime = data.attendanceOpenTime;
+
+            // Also update localStorage for backup
+            localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+            localStorage.setItem('attendanceOpen', attendanceOpen.toString());
+            if (attendanceOpenTime) {
+                localStorage.setItem('attendanceOpenTime', attendanceOpenTime.toString());
+            } else {
+                localStorage.removeItem('attendanceOpenTime');
+            }
+
+            updateAttendanceUI();
+        } else {
+            console.error('Failed to sync data from server');
+            // Fallback to localStorage
+            attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
+            attendanceOpen = localStorage.getItem('attendanceOpen') === 'true';
+            attendanceOpenTime = localStorage.getItem('attendanceOpenTime');
+        }
+    } catch (error) {
+        console.error('Error syncing data:', error);
+        // Fallback to localStorage
+        attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
+        attendanceOpen = localStorage.getItem('attendanceOpen') === 'true';
+        attendanceOpenTime = localStorage.getItem('attendanceOpenTime');
+    }
+}
+
 // Function to save attendance data
-function saveAttendance(name, status) {
-    const now = new Date();
-    const timestamp = now.toLocaleString('id-ID');
+async function saveAttendance(name, status) {
     const attendance = {
         name: name,
-        status: status,
-        timestamp: timestamp
+        status: status
     };
 
-    // Save to localStorage as JSON
-    attendanceData.unshift(attendance);
-    localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+    try {
+        const response = await fetch(SYNC_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(attendance)
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log('Attendance saved to server:', result.message);
+            // Sync data after saving
+            await syncDataFromServer();
+            return true;
+        } else {
+            console.error('Failed to save attendance to server');
+            // Fallback to localStorage
+            const now = new Date();
+            const timestamp = now.toLocaleString('id-ID');
+            const localAttendance = {
+                name: name,
+                status: status,
+                timestamp: timestamp
+            };
+            attendanceData.unshift(localAttendance);
+            localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+            return true;
+        }
+    } catch (error) {
+        console.error('Error saving attendance:', error);
+        // Fallback to localStorage
+        const now = new Date();
+        const timestamp = now.toLocaleString('id-ID');
+        const localAttendance = {
+            name: name,
+            status: status,
+            timestamp: timestamp
+        };
+        attendanceData.unshift(localAttendance);
+        localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+        return true;
+    }
 }
 
 // Function to check if attendance is open
 function isAttendanceOpen() {
-    return localStorage.getItem('attendanceOpen') === 'true';
+    return attendanceOpen;
 }
 
 // Function to update attendance UI based on status
@@ -143,9 +221,29 @@ window.addEventListener('storage', function(e) {
     }
 });
 
+// Periodic sync interval (30 seconds)
+let syncInterval;
+
+// Function to start periodic syncing
+function startPeriodicSync() {
+    // Initial sync
+    syncDataFromServer();
+
+    // Sync every 30 seconds
+    syncInterval = setInterval(syncDataFromServer, 30000);
+}
+
+// Function to stop periodic syncing
+function stopPeriodicSync() {
+    if (syncInterval) {
+        clearInterval(syncInterval);
+        syncInterval = null;
+    }
+}
+
 // Initialize UI on page load
 document.addEventListener('DOMContentLoaded', function() {
-    updateAttendanceUI();
+    startPeriodicSync();
 });
 
 // Form submit event listener
